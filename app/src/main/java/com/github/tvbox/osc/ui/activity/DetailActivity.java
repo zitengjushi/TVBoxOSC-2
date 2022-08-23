@@ -415,7 +415,11 @@ public class DetailActivity extends BaseActivity {
                     vodInfo.sourceKey = mVideo.sourceKey;
 
                     tvName.setText(mVideo.name);
-                    setTextShow(tvSite, "来源：", ApiConfig.get().getSource(mVideo.sourceKey).getName());
+                    if (sourceKey.equals("豆瓣")) {
+                        setTextShow(tvSite, "来源：", sourceKey);
+                    }else{
+                        setTextShow(tvSite, "来源：", ApiConfig.get().getSource(mVideo.sourceKey).getName());
+                    }
                     setTextShow(tvYear, "年份：", mVideo.year == 0 ? "" : String.valueOf(mVideo.year));
                     setTextShow(tvArea, "地区：", mVideo.area);
                     setTextShow(tvLang, "语言：", mVideo.lang);
@@ -484,16 +488,23 @@ public class DetailActivity extends BaseActivity {
                             llPlayerFragmentContainerBlock.setVisibility(View.VISIBLE);
                         }
                         // startQuickSearch();
+                        llPlayerPlace.setVisibility(showPreview ? View.VISIBLE : View.GONE);
+                        ivThumb.setVisibility(!showPreview ? View.VISIBLE : View.GONE);
                     } else {
                         mGridViewFlag.setVisibility(View.GONE);
                         mGridView.setVisibility(View.GONE);
                         tvPlay.setVisibility(View.GONE);
                         mEmptyPlayList.setVisibility(View.VISIBLE);
+                        llPlayerPlace.setVisibility(View.GONE);
+                        ivThumb.setVisibility(View.VISIBLE);
                     }
                 } else {
                     showEmpty();
                     llPlayerFragmentContainer.setVisibility(View.GONE);
                     llPlayerFragmentContainerBlock.setVisibility(View.GONE);
+                }
+                if (sourceKey.equals("豆瓣")) {
+                    tvQuickSearch.performClick();
                 }
             }
         });
@@ -519,7 +530,11 @@ public class DetailActivity extends BaseActivity {
             vodId = vid;
             sourceKey = key;
             showLoading();
-            sourceViewModel.getDetail(sourceKey, vodId);
+            if (sourceKey.equals("豆瓣")) {
+                sourceViewModel.getDoubanDetail(sourceKey, vodId);
+            }else{
+                sourceViewModel.getDetail(sourceKey, vodId);
+            }
             boolean isVodCollect = RoomDataManger.isVodCollect(sourceKey, vodId);
             if (isVodCollect) {
                 tvCollect.setText("取消收藏");
