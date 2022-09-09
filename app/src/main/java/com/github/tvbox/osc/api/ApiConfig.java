@@ -247,6 +247,7 @@ public class ApiConfig {
             sb.setPlayerUrl(DefaultConfig.safeJsonString(obj, "playUrl", ""));
             sb.setExt(DefaultConfig.safeJsonString(obj, "ext", ""));
             sb.setJar(DefaultConfig.safeJsonString(obj, "jar", ""));
+            sb.setPlayerType(DefaultConfig.safeJsonInt(obj, "playerType", -1));
             sb.setCategories(DefaultConfig.safeJsonStringList(obj, "categories"));
             if (firstSite == null)
                 firstSite = sb;
@@ -263,7 +264,7 @@ public class ApiConfig {
         // 需要使用vip解析的flag
         vipParseFlags = DefaultConfig.safeJsonStringList(infoJson, "flags");
         // 解析地址
-        parseBeanList = new ArrayList<>();
+        parseBeanList.clear();
         for (JsonElement opt : infoJson.get("parses").getAsJsonArray()) {
             JsonObject obj = (JsonObject) opt;
             ParseBean pb = new ParseBean();
