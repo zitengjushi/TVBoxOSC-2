@@ -53,7 +53,7 @@ public class GridFragment extends BaseLazyFragment {
     private class GridInfo{
         public String sortID="";
         public TvRecyclerView mGridView;
-        public GridAdapter gridAdapter;
+        public BaseQuickAdapter gridAdapter;
         public int page = 1;
         public int maxPage = 1;
         public boolean isLoad = false;
@@ -141,14 +141,11 @@ public class GridFragment extends BaseLazyFragment {
             mGridView.setVisibility(View.VISIBLE);
         }
         mGridView.setHasFixedSize(true);
-<<<<<<< HEAD
         if (sortData.id.equals("my1")||sortData.id.equals("my2")) {
             gridAdapter = new HomeHotVodAdapter();
         }else{
-            gridAdapter = new GridAdapter();
+            gridAdapter = new GridAdapter(isFolederMode());
         }
-=======
-        gridAdapter = new GridAdapter(isFolederMode());
         this.page =1;
         this.maxPage =1;
         this.isLoad = false;
@@ -156,7 +153,6 @@ public class GridFragment extends BaseLazyFragment {
 
     private void initView() {
         this.createView();
->>>>>>> origin/main
         mGridView.setAdapter(gridAdapter);
         if(isFolederMode()){
             mGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
@@ -273,16 +269,12 @@ public class GridFragment extends BaseLazyFragment {
     private void initData() {
         showLoading();
         isLoad = false;
-<<<<<<< HEAD
+        scrollTop();
         if (sortData.id.equals("my2")||sortData.id.equals("my1")) {
             sourceViewModel.getDoubanList(sortData, page);
         }else{
             sourceViewModel.getList(sortData, page);
         }
-=======
-        scrollTop();
-        sourceViewModel.getList(sortData, page);
->>>>>>> origin/main
     }
 
     public boolean isTop() {
