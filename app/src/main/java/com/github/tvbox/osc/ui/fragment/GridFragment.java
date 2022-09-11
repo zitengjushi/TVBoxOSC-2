@@ -43,7 +43,7 @@ public class GridFragment extends BaseLazyFragment {
     private TvRecyclerView mGridView;
     private SourceViewModel sourceViewModel;
     private GridFilterDialog gridFilterDialog;
-    private BaseQuickAdapter gridAdapter;
+    private GridAdapter gridAdapter;
     private HomeHotVodAdapter homeHotVodAdapter;
     private int page = 1;
     private int maxPage = 1;
@@ -53,7 +53,7 @@ public class GridFragment extends BaseLazyFragment {
     private class GridInfo{
         public String sortID="";
         public TvRecyclerView mGridView;
-        public BaseQuickAdapter gridAdapter;
+        public GridAdapter gridAdapter;
         public int page = 1;
         public int maxPage = 1;
         public boolean isLoad = false;
@@ -141,11 +141,7 @@ public class GridFragment extends BaseLazyFragment {
             mGridView.setVisibility(View.VISIBLE);
         }
         mGridView.setHasFixedSize(true);
-        if (sortData.id.equals("my1")||sortData.id.equals("my2")) {
-            gridAdapter = new HomeHotVodAdapter();
-        }else{
-            gridAdapter = new GridAdapter(isFolederMode());
-        }
+        gridAdapter = new GridAdapter(isFolederMode());
         this.page =1;
         this.maxPage =1;
         this.isLoad = false;
