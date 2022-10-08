@@ -90,7 +90,10 @@ public class GridFragment extends BaseLazyFragment {
     }
     public boolean isFolederMode(){ return (getUITag() =='1'); }
     // 获取当前页面UI的显示模式 ‘0’ 正常模式 '1' 文件夹模式 '2' 显示缩略图的文件夹模式
-    public char getUITag(){  return (sortData.flag == null || sortData.flag.length() ==0 ) ?  '0' : sortData.flag.charAt(0); }
+    public char getUITag(){
+        System.out.println(sortData);
+        return (sortData == null || sortData.flag == null || sortData.flag.length() ==0 ) ?  '0' : sortData.flag.charAt(0);
+    }
     // 是否允许聚合搜索 sortData.flag的第二个字符为‘1’时允许聚搜
     public boolean enableFastSearch(){  return (sortData.flag == null || sortData.flag.length() < 2 ) ?  true : (sortData.flag.charAt(1) =='1'); }
     // 保存当前页面
@@ -220,6 +223,21 @@ public class GridFragment extends BaseLazyFragment {
                 }
             }
         });
+        gridAdapter.setOnItemLongClickListener(new BaseQuickAdapter.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(BaseQuickAdapter adapter, View view, int position) {
+                FastClickCheckUtil.check(view);
+                Movie.Video video = gridAdapter.getData().get(position);
+                if (video != null) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("id", video.id);
+                    bundle.putString("sourceKey", video.sourceKey);
+                    bundle.putString("title", video.name);
+                    jumpActivity(FastSearchActivity.class, bundle);
+                }
+                return true;
+            }
+        });
         gridAdapter.setLoadMoreView(new LoadMoreView());
         setLoadSir2(mGridView);
     }
@@ -241,6 +259,14 @@ public class GridFragment extends BaseLazyFragment {
                     }
                     page++;
                     maxPage = absXml.movie.pagecount;
+
+                    if (page > maxPage) {
+                        gridAdapter.loadMoreEnd();
+                        gridAdapter.setEnableLoadMore(false);
+                    } else {
+                        gridAdapter.loadMoreComplete();
+                        gridAdapter.setEnableLoadMore(true);
+                    }
                 } else {
                     if(page == 1){
                         showEmpty();
@@ -248,11 +274,12 @@ public class GridFragment extends BaseLazyFragment {
                     if(page > maxPage){
                         Toast.makeText(getContext(), "没有更多了", Toast.LENGTH_SHORT).show();
                     }
-                }
-                if (page > maxPage) {
-                    gridAdapter.loadMoreEnd();
-                } else {
-                    gridAdapter.loadMoreComplete();
+                    if (page > maxPage) {
+                        gridAdapter.loadMoreEnd();
+                    } else {
+                        gridAdapter.loadMoreComplete();
+                    }
+                    gridAdapter.setEnableLoadMore(false);
                 }
             }
         });

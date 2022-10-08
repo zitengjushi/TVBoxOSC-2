@@ -18,6 +18,7 @@ import com.github.tvbox.osc.util.AdBlocker;
 import com.github.tvbox.osc.util.DefaultConfig;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.MD5;
+import com.github.tvbox.osc.util.VideoParseRuler;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -61,6 +62,9 @@ public class ApiConfig {
 
     private JarLoader jarLoader = new JarLoader();
 
+    private String userAgent = "okhttp/3.15";
+
+    private String requestAccept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
 
     private ApiConfig() {
         sourceBeanList = new LinkedHashMap<>();
@@ -102,6 +106,8 @@ public class ApiConfig {
             apiFix = "http://" + apiFix;
         }
         OkGo.<String>get(apiFix)
+                .headers("User-Agent", userAgent)
+                .headers("Accept", requestAccept)
                 .execute(new AbsCallback<String>() {
                     @Override
                     public void onSuccess(Response<String> response) {
@@ -153,6 +159,8 @@ public class ApiConfig {
                         if (apiUrl.startsWith("clan")) {
                             result = clanContentFix(clanToAddress(apiUrl), result);
                         }
+                        //假相對路徑
+                        result = fixContentPath(apiUrl,result);
                         return result;
                     }
                 });
@@ -176,7 +184,10 @@ public class ApiConfig {
             }
         }
 
-        OkGo.<File>get(jarUrl).execute(new AbsCallback<File>() {
+        OkGo.<File>get(jarUrl)
+                .headers("User-Agent", userAgent)
+                .headers("Accept", requestAccept)
+                .execute(new AbsCallback<File>() {
 
             @Override
             public File convertResponse(okhttp3.Response response) throws Throwable {
@@ -299,13 +310,20 @@ public class ApiConfig {
                 //clan
                 String extUrl = Uri.parse(url).getQueryParameter("ext");
                 if (extUrl != null && !extUrl.isEmpty()) {
-                    String extUrlFix = new String(Base64.decode(extUrl, Base64.DEFAULT | Base64.URL_SAFE | Base64.NO_WRAP), "UTF-8");
+                    String extUrlFix;
+                    if(extUrl.startsWith("http") || extUrl.startsWith("clan://")){
+                        extUrlFix = extUrl;
+                    }else {
+                        extUrlFix = new String(Base64.decode(extUrl, Base64.DEFAULT | Base64.URL_SAFE | Base64.NO_WRAP), "UTF-8");
+                    }
+//                    System.out.println("extUrlFix :"+extUrlFix);
                     if (extUrlFix.startsWith("clan://")) {
                         extUrlFix = clanContentFix(clanToAddress(apiUrl), extUrlFix);
-                        extUrlFix = Base64.encodeToString(extUrlFix.getBytes("UTF-8"), Base64.DEFAULT | Base64.URL_SAFE | Base64.NO_WRAP);
-                        url = url.replace(extUrl, extUrlFix);
                     }
+                    extUrlFix = Base64.encodeToString(extUrlFix.getBytes("UTF-8"), Base64.DEFAULT | Base64.URL_SAFE | Base64.NO_WRAP);
+                    url = url.replace(extUrl, extUrlFix);
                 }
+//                System.out.println("url :"+url);
                 LiveChannelGroup liveChannelGroup = new LiveChannelGroup();
                 liveChannelGroup.setGroupName(url);
                 liveChannelGroupList.add(liveChannelGroup);
@@ -314,6 +332,20 @@ public class ApiConfig {
             }
         } catch (Throwable th) {
             th.printStackTrace();
+        }
+        //video parse rule for host
+        if (infoJson.has("rules")) {
+            for(JsonElement oneHostRule : infoJson.getAsJsonArray("rules")) {
+                JsonObject obj = (JsonObject) oneHostRule;
+                String host = obj.get("host").getAsString();
+                JsonArray ruleJsonArr = obj.getAsJsonArray("rule");
+                ArrayList<String> rule = new ArrayList<>();
+                for(JsonElement one : ruleJsonArr) {
+                    String oneRule = one.getAsString();
+                    rule.add(oneRule);
+                }
+                VideoParseRuler.addHostRule(host, rule);
+            }
         }
         // 广告地址
         for (JsonElement host : infoJson.getAsJsonArray("ads")) {
@@ -501,5 +533,16 @@ public class ApiConfig {
     String clanContentFix(String lanLink, String content) {
         String fix = lanLink.substring(0, lanLink.indexOf("/file/") + 6);
         return content.replace("clan://", fix);
+    }
+
+    String fixContentPath(String url, String content) {
+        if (content.contains("\"./")) {
+            if(!url.startsWith("http") && !url.startsWith("clan://")){
+                url = "http://" + url;
+            }
+            if(url.startsWith("clan://"))url=clanToAddress(url);
+            content = content.replace("./", url.substring(0,url.lastIndexOf("/") + 1));
+        }
+        return content;
     }
 }
