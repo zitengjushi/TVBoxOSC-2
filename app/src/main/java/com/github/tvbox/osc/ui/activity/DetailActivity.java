@@ -26,6 +26,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.api.ApiConfig;
+import com.github.tvbox.osc.base.App;
 import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.bean.AbsXml;
 import com.github.tvbox.osc.bean.Movie;
@@ -42,6 +43,7 @@ import com.github.tvbox.osc.util.DefaultConfig;
 import com.github.tvbox.osc.util.FastClickCheckUtil;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.MD5;
+import com.github.tvbox.osc.util.SearchHelper;
 import com.github.tvbox.osc.viewmodel.SourceViewModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -66,6 +68,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -121,6 +124,7 @@ public class DetailActivity extends BaseActivity {
     private String preFlag="";
     private boolean firstReverse;
     private V7GridLayoutManager mGridViewLayoutMgr = null;
+    private HashMap<String, SourceBean> mCheckSources = null;
 
     @Override
     protected int getLayoutResID() {
@@ -264,7 +268,7 @@ public class DetailActivity extends BaseActivity {
                 //获取剪切板管理器
                 ClipboardManager cm = (ClipboardManager)getSystemService(mContext.CLIPBOARD_SERVICE);
                 //设置内容到剪切板
-                cm.setPrimaryClip(ClipData.newPlainText(null, tvPlayUrl.getText().toString().replace("播放地址: ","")));
+                cm.setPrimaryClip(ClipData.newPlainText(null, tvPlayUrl.getText().toString().replace("播放地址：","")));
                 Toast.makeText(DetailActivity.this, "已复制", Toast.LENGTH_SHORT).show();
             }
         });
@@ -362,6 +366,10 @@ public class DetailActivity extends BaseActivity {
         setLoadSir(llLayout);
     }
 
+    private void initCheckedSourcesForSearch() {
+        mCheckSources = SearchHelper.getSourcesForSearch();
+    }
+
     private List<Runnable> pauseRunnable = null;
 
     private void jumpToPlay() {
@@ -371,7 +379,8 @@ public class DetailActivity extends BaseActivity {
             //保存历史
             insertVod(sourceKey, vodInfo);
             bundle.putString("sourceKey", sourceKey);
-            bundle.putSerializable("VodInfo", vodInfo);
+//            bundle.putSerializable("VodInfo", vodInfo);
+            App.getInstance().setVodInfo(vodInfo);
             if (showPreview) {
                 if (previewVodInfo == null) {
                     try {
@@ -391,7 +400,8 @@ public class DetailActivity extends BaseActivity {
                     previewVodInfo.playFlag = vodInfo.playFlag;
                     previewVodInfo.playIndex = vodInfo.playIndex;
                     previewVodInfo.seriesMap = vodInfo.seriesMap;
-                    bundle.putSerializable("VodInfo", previewVodInfo);
+//                    bundle.putSerializable("VodInfo", previewVodInfo);
+                    App.getInstance().setVodInfo(previewVodInfo);
                 }
                 playFragment.setData(bundle);
             } else {
@@ -536,7 +546,7 @@ public class DetailActivity extends BaseActivity {
                                 flag.selected = false;
                         }
                         //设置播放地址
-                        setTextShow(tvPlayUrl, "播放地址: ", vodInfo.seriesMap.get(vodInfo.playFlag).get(0).url);
+                        setTextShow(tvPlayUrl, "播放地址：", vodInfo.seriesMap.get(vodInfo.playFlag).get(0).url);
                         seriesFlagAdapter.setNewData(vodInfo.seriesFlags);
                         mGridViewFlag.scrollToPosition(flagScrollTo);
 
@@ -609,16 +619,16 @@ public class DetailActivity extends BaseActivity {
             if (event.obj != null) {
                 if (event.obj instanceof Integer) {
                     int index = (int) event.obj;
-                    if (index != vodInfo.playIndex) {
-                        seriesAdapter.getData().get(vodInfo.playIndex).selected = false;
-                        seriesAdapter.notifyItemChanged(vodInfo.playIndex);
-                        seriesAdapter.getData().get(index).selected = true;
-                        seriesAdapter.notifyItemChanged(index);
-                        mGridView.setSelection(index);
-                        vodInfo.playIndex = index;
-                        //保存历史
-                        insertVod(sourceKey, vodInfo);
+                    for (int j = 0; j < vodInfo.seriesMap.get(vodInfo.playFlag).size(); j++) {
+                        seriesAdapter.getData().get(j).selected = false;
+                        seriesAdapter.notifyItemChanged(j);
                     }
+                    seriesAdapter.getData().get(index).selected = true;
+                    seriesAdapter.notifyItemChanged(index);
+                    mGridView.setSelection(index);
+                    vodInfo.playIndex = index;
+                    //保存历史
+                    insertVod(sourceKey, vodInfo);
                 } else if (event.obj instanceof JSONObject) {
                     vodInfo.playerCfg = ((JSONObject) event.obj).toString();
                     //保存历史
@@ -659,6 +669,7 @@ public class DetailActivity extends BaseActivity {
     }
 
     private void startQuickSearch() {
+        initCheckedSourcesForSearch();
         if (hadQuickStart)
             return;
         hadQuickStart = true;
@@ -723,6 +734,9 @@ public class DetailActivity extends BaseActivity {
         ArrayList<String> siteKey = new ArrayList<>();
         for (SourceBean bean : searchRequestList) {
             if (!bean.isSearchable() || !bean.isQuickSearch()) {
+                continue;
+            }
+            if (mCheckSources != null && !mCheckSources.containsKey(bean.getKey())) {
                 continue;
             }
             siteKey.add(bean.getKey());

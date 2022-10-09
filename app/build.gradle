@@ -8,7 +8,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 26
         versionCode 1
-        versionName '1.0.4'
+        versionName '1.0.5'
         multiDexEnabled true
         //设置room的Schema的位置
         javaCompileOptions {
@@ -87,6 +87,7 @@ dependencies {
     implementation 'com.orhanobut:hawk:2.0.1'
 
     implementation project(":player")
+    implementation project(":quickjs")
 
     implementation('org.xwalk:xwalk_shared_library:23.53.589.4') {
         exclude group: 'com.android.support'
@@ -96,5 +97,10 @@ dependencies {
     implementation 'com.owen:tv-recyclerview:3.0.0'
 
     implementation 'com.github.getActivity:XXPermissions:13.6'
-    implementation 'org.jsoup:jsoup:1.13.1'
+
+    implementation 'org.jsoup:jsoup:1.14.1'
+    implementation 'com.github.hedzr:android-file-chooser:v1.2.0-final'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'com.googlecode.juniversalchardet:juniversalchardet:1.0.3'
+
 }
