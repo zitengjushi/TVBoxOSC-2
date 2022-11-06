@@ -1113,7 +1113,9 @@ public class SourceViewModel extends ViewModel {
                         Element element;
                         try {
                             element = doc.select("div#info a[rel=v:directedBy]").first();
-                            vodList.put("vod_director", element.text());
+                            if(element!=null){
+                                vodList.put("vod_director", element.text());
+                            }
                         }catch (Exception ex) {
                             ex.printStackTrace();
                         }
@@ -1123,7 +1125,9 @@ public class SourceViewModel extends ViewModel {
                             Elements elements = doc.select("div#info a[rel=v:starring]");
                             String protagonist = "";
                             for (Element e : elements) {
-                                protagonist += e.text()+"，";
+                                if(e!=null){
+                                    protagonist += e.text()+"，";
+                                }
                             }
                             if(!protagonist.equals("")){
                                 protagonist = protagonist.substring(0, protagonist.length()-1);
@@ -1136,17 +1140,29 @@ public class SourceViewModel extends ViewModel {
                         //获取电影上映日期
                         try {
                             element = doc.select("div#info span[property=v:initialReleaseDate]").first();
-                            vodList.put("vod_pubdate", element.text());//上映日期
-                            element = doc.select("div#link-report span[property=v:summary]").first();
-                            vodList.put("vod_content", element.text());//简介
+                            if(element!=null){
+                                vodList.put("vod_pubdate", element.text());//上映日期
+                            }
+                            element = doc.select("div#link-report-intra span[property=v:summary]").first();
+                            if(element!=null){
+                                vodList.put("vod_content", element.text());//简介
+                            }
                             element = doc.select("div#content strong[property=v:average]").first();
-                            vodList.put("vod_douban_score", element.text());//评分
+                            if(element!=null){
+                                vodList.put("vod_douban_score", element.text());//评分
+                            }
                             element = doc.select("div#content span[property=v:itemreviewed]").first();
-                            vodList.put("vod_name", element.text());//影片名称
+                            if(element!=null){
+                                vodList.put("vod_name", element.text());//影片名称
+                            }
                             element = doc.select("div#content span[property=v:genre]").first();
-                            vodList.put("vod_class", element.text());//类型
+                            if(element!=null){
+                                vodList.put("vod_class", element.text());//类型
+                            }
                             element = doc.select("div#mainpic img[src]").first();
-                            vodList.put("vod_pic", element.attr("src"));//影片封面
+                            if(element!=null){
+                                vodList.put("vod_pic", element.attr("src"));//影片封面
+                            }
                         }catch (Exception ex) {
                             ex.printStackTrace();
                         }
