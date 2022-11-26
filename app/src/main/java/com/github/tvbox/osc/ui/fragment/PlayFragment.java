@@ -77,6 +77,8 @@ import com.obsez.android.lib.filechooser.ChooserDialog;
 import com.orhanobut.hawk.Hawk;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -90,6 +92,7 @@ import org.xwalk.core.XWalkWebResourceResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -122,6 +125,13 @@ public class PlayFragment extends BaseLazyFragment {
         return R.layout.activity_play;
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void refresh(RefreshEvent event) {
+        if (event.type == RefreshEvent.TYPE_SUBTITLE_SIZE_CHANGE) {
+            mController.mSubtitleView.setTextSize((int) event.obj);
+        }
+    }
+
     @Override
     protected void init() {
         initView();
@@ -130,6 +140,7 @@ public class PlayFragment extends BaseLazyFragment {
     }
 
     private void initView() {
+        EventBus.getDefault().register(this);
         mHandler = new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(@NonNull Message msg) {
@@ -1003,7 +1014,7 @@ public class PlayFragment extends BaseLazyFragment {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            OkGo.<String>get(pb.getUrl() + webUrl)
+            OkGo.<String>get(pb.getUrl() + encodeUrl(webUrl))
                     .tag("json_jx")
                     .headers(reqHeaders)
                     .execute(new AbsCallback<String>() {
@@ -1172,6 +1183,14 @@ public class PlayFragment extends BaseLazyFragment {
         }
     }
 
+    private String encodeUrl(String url) {
+        try {
+            return URLEncoder.encode(url, "UTF-8");
+        } catch (Exception e) {
+            return url;
+        }
+    }
+
     // webview
     private XWalkView mXwalkWebView;
     private XWalkWebClient mX5WebClient;
@@ -1289,10 +1308,10 @@ public class PlayFragment extends BaseLazyFragment {
 
     boolean checkVideoFormat(String url) {
         try{
+            if (url.contains("url=http") || url.contains(".html")) {
+                return false;
+            }
             if (sourceBean.getType() == 3) {
-                if (url.contains("=http") || url.contains(".html")) {
-                    return false;
-                }
                 Spider sp = ApiConfig.get().getCSP(sourceBean);
                 if (sp != null && sp.manualVideoCheck()){
                     return sp.isVideoFormat(url);
@@ -1504,8 +1523,8 @@ public class PlayFragment extends BaseLazyFragment {
         @Nullable
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            WebResourceResponse response = checkIsVideo(url, new HashMap<>());
-            return response;
+//            WebResourceResponse response = checkIsVideo(url, new HashMap<>());
+            return null;
         }
 
         @Nullable
