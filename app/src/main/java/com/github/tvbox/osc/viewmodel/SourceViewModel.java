@@ -264,6 +264,7 @@ public class SourceViewModel extends ViewModel {
                     .params("t", sortData.id)
                     .params("pg", page)
                     .params(sortData.filterSelect)
+                    .params("f", (sortData.filterSelect == null || sortData.filterSelect.size() <= 0) ? "" : new JSONObject(sortData.filterSelect).toString())
                     .execute(new AbsCallback<String>() {
 
                         @Override
@@ -491,11 +492,14 @@ public class SourceViewModel extends ViewModel {
             try {
                 Spider sp = ApiConfig.get().getCSP(sourceBean);
                 String search = sp.searchContent(wd, false);
-                if(!search.isEmpty()){
+                if(!TextUtils.isEmpty(search)){
                     json(searchResult, search, sourceBean.getKey());
+                } else {
+                    json(searchResult, "", sourceBean.getKey());
                 }
             } catch (Throwable th) {
                 th.printStackTrace();
+                json(searchResult, "", sourceBean.getKey());
             }
         } else if (type == 0 || type == 1) {
             OkGo.<String>get(sourceBean.getApi())
@@ -678,6 +682,8 @@ public class SourceViewModel extends ViewModel {
                     result.put("parse", 1);
                     result.put("url", url);
                 }
+                result.put("proKey", progressKey);
+                result.put("subtKey", subtitleKey);
                 result.put("playUrl", playUrl);
                 result.put("flag", playFlag);
                 playResult.postValue(result);
@@ -708,6 +714,7 @@ public class SourceViewModel extends ViewModel {
                             JSONObject result = new JSONObject(json);
                             result.put("key", url);
                             result.put("proKey", progressKey);
+                            result.put("subtKey", subtitleKey);
                             if (!result.has("flag"))
                                 result.put("flag", playFlag);
                             playResult.postValue(result);
