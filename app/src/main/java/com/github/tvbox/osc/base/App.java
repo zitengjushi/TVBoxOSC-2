@@ -18,6 +18,9 @@ import com.github.tvbox.osc.util.js.JSEngine;
 import com.kingja.loadsir.core.LoadSir;
 import com.orhanobut.hawk.Hawk;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import me.jessyan.autosize.AutoSizeConfig;
 import me.jessyan.autosize.unit.Subunits;
 
@@ -57,9 +60,32 @@ public class App extends MultiDexApplication {
     private void initParams() {
         // Hawk
         Hawk.init(this).build();
+
+        String defaultApiName = "";
+        String defaultApi = "";
+
+        HashMap<String, String> defaultApiMap = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
+        defaultApiMap.put(defaultApiName, defaultApi);
+
+        ArrayList<String> defaultApiHistory = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
+        defaultApiHistory.add(defaultApiName);
+
+        Hawk.put(HawkConfig.DEBUG_OPEN, false);
+
+        putDefault(HawkConfig.API_URL, defaultApi);
+        putDefault(HawkConfig.API_NAME, defaultApiName);
+        putDefault(HawkConfig.API_NAME_HISTORY, defaultApiHistory);
+        putDefault(HawkConfig.API_MAP, defaultApiMap);
+
         Hawk.put(HawkConfig.DEBUG_OPEN, false);
         if (!Hawk.contains(HawkConfig.PLAY_TYPE)) {
             Hawk.put(HawkConfig.PLAY_TYPE, 1);
+        }
+    }
+
+    private void putDefault(String key, Object value) {
+        if (!Hawk.contains(key)) {
+            Hawk.put(key, value);
         }
     }
 

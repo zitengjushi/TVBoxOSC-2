@@ -102,3 +102,4 @@ public class ApiHistoryDialogAdapter extends ListAdapter<String, ApiHistoryDialo
         });
     }
 }
+

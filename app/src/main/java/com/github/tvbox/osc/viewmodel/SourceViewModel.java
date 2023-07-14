@@ -1068,7 +1068,7 @@ public class SourceViewModel extends ViewModel {
                 JSONObject vod = new JSONObject();
                 vod.put("vod_id", obj.get("id").getAsString());
                 vod.put("vod_name", obj.get("title").getAsString());
-                vod.put("vod_pic", obj.get("cover").getAsString());
+                vod.put("vod_pic", obj.get("cover").getAsString()+ "@Referer=https://movie.douban.com/@User-Agent=" + UA.random());
                 vod.put("vod_remarks", obj.get("rate").getAsString());
                 videos.put(vod);
             }
@@ -1169,7 +1169,7 @@ public class SourceViewModel extends ViewModel {
                             }
                             element = doc.select("div#mainpic img[src]").first();
                             if(element!=null){
-                                vodList.put("vod_pic", element.attr("src"));//影片封面
+                                vodList.put("vod_pic", element.attr("src")+ "@Referer=https://movie.douban.com/@User-Agent=" + UA.random());//影片封面
                             }
                         }catch (Exception ex) {
                             ex.printStackTrace();

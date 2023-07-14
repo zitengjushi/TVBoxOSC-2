@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.DiffUtil;
 
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.api.ApiConfig;
+import com.github.tvbox.osc.api.StoreApiConfig;
 import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.base.BaseLazyFragment;
 import com.github.tvbox.osc.bean.IJKCode;
@@ -20,12 +21,15 @@ import com.github.tvbox.osc.event.RefreshEvent;
 import com.github.tvbox.osc.player.thirdparty.RemoteTVBox;
 import com.github.tvbox.osc.ui.activity.HomeActivity;
 import com.github.tvbox.osc.ui.activity.SettingActivity;
+import com.github.tvbox.osc.ui.adapter.ApiHistoryDialogAdapter;
 import com.github.tvbox.osc.ui.adapter.SelectDialogAdapter;
 import com.github.tvbox.osc.ui.dialog.AboutDialog;
 import com.github.tvbox.osc.ui.dialog.ApiDialog;
+import com.github.tvbox.osc.ui.dialog.ApiHistoryDialog;
 import com.github.tvbox.osc.ui.dialog.BackupDialog;
 import com.github.tvbox.osc.ui.dialog.SearchRemoteTvDialog;
 import com.github.tvbox.osc.ui.dialog.SelectDialog;
+import com.github.tvbox.osc.ui.dialog.StoreApiDialog;
 import com.github.tvbox.osc.ui.dialog.XWalkInitDialog;
 import com.github.tvbox.osc.util.FastClickCheckUtil;
 import com.github.tvbox.osc.util.FileUtils;
@@ -45,6 +49,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import okhttp3.HttpUrl;
@@ -110,13 +115,14 @@ public class ModelSettingFragment extends BaseLazyFragment {
         tvMediaCodec.setText(Hawk.get(HawkConfig.IJK_CODEC, ""));
         tvDebugOpen.setText(Hawk.get(HawkConfig.DEBUG_OPEN, false) ? "已打开" : "已关闭");
         tvParseWebView.setText(Hawk.get(HawkConfig.PARSE_WEBVIEW, true) ? "系统自带" : "XWalkView");
-        tvApi.setText(Hawk.get(HawkConfig.API_URL, ""));
+//        tvApi.setText(Hawk.get(HawkConfig.API_URL, ""));
 
         tvDns.setText(OkGoHelper.dnsHttpsList.get(Hawk.get(HawkConfig.DOH_URL, 0)));
         tvHomeRec.setText(getHomeRecName(Hawk.get(HawkConfig.HOME_REC, 0)));
         tvHistoryNum.setText(HistoryHelper.getHistoryNumName(Hawk.get(HawkConfig.HISTORY_NUM, 0)));
         tvSearchView.setText(getSearchView(Hawk.get(HawkConfig.SEARCH_VIEW, 0)));
-        tvHomeApi.setText(ApiConfig.get().getHomeSourceBean().getName());
+        // tvHomeApi.setText(ApiConfig.get().getHomeSourceBean().getName());
+        tvHomeApi.setText(Hawk.get(HawkConfig.API_NAME, ""));
         tvScale.setText(PlayerHelper.getScaleName(Hawk.get(HawkConfig.PLAY_SCALE, 0)));
         tvPlay.setText(PlayerHelper.getPlayerName(Hawk.get(HawkConfig.PLAY_TYPE, 0)));
         tvRender.setText(PlayerHelper.getRenderName(Hawk.get(HawkConfig.PLAY_RENDER, 0)));
@@ -197,46 +203,39 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 ((BaseActivity) requireActivity()).changeWallpaper(true);
             }
         });
-        findViewById(R.id.llHomeApi).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FastClickCheckUtil.check(v);
-                List<SourceBean> sites = ApiConfig.get().getSourceBeanList();
-                if (sites.size() > 0) {
-                    SelectDialog<SourceBean> dialog = new SelectDialog<>(mActivity);
-                    dialog.setTip("请选择首页数据源");
-                    dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<SourceBean>() {
-                        @Override
-                        public void click(SourceBean value, int pos) {
-                            ApiConfig.get().setSourceBean(value);
-                            tvHomeApi.setText(ApiConfig.get().getHomeSourceBean().getName());
+        findViewById(R.id.llHomeApi).setOnClickListener( v -> {
+            ArrayList<String> history = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
+            HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
 
-                            Intent intent =new Intent(mContext, HomeActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            Bundle bundle = new Bundle();
-                            bundle.putBoolean("useCache", true);
-                            intent.putExtras(bundle);
-                            startActivity(intent);
-                        }
+            if (history.isEmpty())
+                return;
+            String current = Hawk.get(HawkConfig.API_NAME, "");
+            int idx = 0;
+            if (history.contains(current))
+                idx = history.indexOf(current);
+            ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
+            dialog.setTip("历史配置列表");
+            dialog.setAdapter(new ApiHistoryDialogAdapter.SelectDialogInterface() {
+                @Override
+                public void click(String value) {
+                    Hawk.put(HawkConfig.API_NAME, value);
+                    if (map.containsKey(value))
+                        Hawk.put(HawkConfig.API_URL, map.get(value));
+                    else
+                        Hawk.put(HawkConfig.API_URL, value);
 
-                        @Override
-                        public String getDisplay(SourceBean val) {
-                            return val.getName();
-                        }
-                    }, new DiffUtil.ItemCallback<SourceBean>() {
-                        @Override
-                        public boolean areItemsTheSame(@NonNull @NotNull SourceBean oldItem, @NonNull @NotNull SourceBean newItem) {
-                            return oldItem == newItem;
-                        }
+                    tvHomeApi.setText(value);
 
-                        @Override
-                        public boolean areContentsTheSame(@NonNull @NotNull SourceBean oldItem, @NonNull @NotNull SourceBean newItem) {
-                            return oldItem.getKey().equals(newItem.getKey());
-                        }
-                    }, sites, sites.indexOf(ApiConfig.get().getHomeSourceBean()));
-                    dialog.show();
+                    dialog.dismiss();
                 }
-            }
+
+
+                @Override
+                public void del(String value, ArrayList<String> data) {
+                    Hawk.put(HawkConfig.API_NAME_HISTORY, data);
+                }
+            }, history, idx);
+            dialog.show();
         });
         findViewById(R.id.llDns).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -280,24 +279,117 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 FastClickCheckUtil.check(v);
                 ApiDialog dialog = new ApiDialog(mActivity);
                 EventBus.getDefault().register(dialog);
-                dialog.setOnListener(new ApiDialog.OnListener() {
-                    @Override
-                    public void onchange(String api) {
-                        Hawk.put(HawkConfig.API_URL, api);
-                        tvApi.setText(api);
-                    }
+                dialog.setOnListener(url -> {
+                    tvHomeApi.setText(url);
+//                        tvApi.setText(api);
                 });
-                dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        ((BaseActivity) mActivity).hideSysBar();
-                        EventBus.getDefault().unregister(dialog);
-                    }
+                dialog.setOnDismissListener(dialog1 -> {
+                    ((BaseActivity) mActivity).hideSysBar();
+                    EventBus.getDefault().unregister(dialog1);
                 });
                 dialog.show();
             }
         });
 
+
+        findViewById(R.id.llStoreApi).setOnClickListener( v -> {
+            FastClickCheckUtil.check(v);
+            StoreApiDialog storeApiDialog = new StoreApiDialog(mActivity);
+            EventBus.getDefault().register(storeApiDialog);
+            storeApiDialog.setOnListener(name -> {
+                Hawk.put(HawkConfig.STORE_API_NAME, name);
+            });
+            storeApiDialog.setOnDismissListener(dialog -> {
+                ((BaseActivity) mActivity).hideSysBar();
+                EventBus.getDefault().unregister(dialog);
+            });
+            storeApiDialog.show();
+        });
+
+        findViewById(R.id.llApiHistory).setOnClickListener( v -> {
+            // ArrayList<String> apiHistory = Hawk.get(HawkConfig.API_HISTORY, new ArrayList<>());
+            // ArrayList<String> nameHistory = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
+            ArrayList<String> history = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
+            HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
+
+            // apiHistory.addAll(nameHistory);
+            //
+            //
+            // Set<String> set = new HashSet<>();
+            // List<String> history = new ArrayList<>();
+            //
+            // for (String cd : apiHistory) {
+            //     if (set.add(cd)) {
+            //         history.add(cd);
+            //     }
+            // }
+
+            if (history.isEmpty())
+                return;
+            String current = Hawk.get(HawkConfig.API_NAME, "");
+            int idx = 0;
+            if (history.contains(current))
+                idx = history.indexOf(current);
+            ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
+            dialog.setTip("历史配置列表");
+            dialog.setAdapter(new ApiHistoryDialogAdapter.SelectDialogInterface() {
+                @Override
+                public void click(String value) {
+                    Hawk.put(HawkConfig.API_NAME, value);
+                    if (map.containsKey(value))
+                        Hawk.put(HawkConfig.API_URL, map.get(value));
+                    else
+                        Hawk.put(HawkConfig.API_URL, value);
+
+                    tvHomeApi.setText(value);
+
+                    dialog.dismiss();
+                }
+
+
+                @Override
+                public void del(String value, ArrayList<String> data) {
+                    Hawk.put(HawkConfig.API_NAME_HISTORY, data);
+                }
+            }, history, idx);
+            dialog.show();
+        });
+
+        findViewById(R.id.llStoreApiHistory).setOnClickListener( v -> {
+            ArrayList<String> history = Hawk.get(HawkConfig.STORE_API_NAME_HISTORY, new ArrayList<>());
+            if (history.isEmpty())
+                return;
+
+            String storeApiName = Hawk.get(HawkConfig.STORE_API_NAME, "");
+
+            int idx = 0;
+            if (history.contains(storeApiName))
+                idx = history.indexOf(storeApiName);
+
+            ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
+            dialog.setTip("多源历史配置列表");
+            dialog.setAdapter(new ApiHistoryDialogAdapter.SelectDialogInterface() {
+                @Override
+                public void click(String value) {
+                    Hawk.put(HawkConfig.STORE_API_NAME, value);
+                    try {
+                        StoreApiConfig.get().Subscribe(getContext());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    dialog.dismiss();
+                }
+
+                @Override
+                public void del(String value, ArrayList<String> data) {
+                    HashMap<String, String> map = Hawk.get(HawkConfig.STORE_API_MAP, new HashMap<>());
+                    map.remove(value);
+                    Hawk.put(HawkConfig.STORE_API_MAP, map);
+                    Hawk.put(HawkConfig.STORE_API_NAME_HISTORY, data);
+                }
+            }, history, idx);
+            dialog.show();
+        });
 
 
         findViewById(R.id.llMediaCodec).setOnClickListener(new View.OnClickListener() {
