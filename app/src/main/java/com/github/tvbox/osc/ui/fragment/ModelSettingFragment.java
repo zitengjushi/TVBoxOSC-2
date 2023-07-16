@@ -51,6 +51,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import okhttp3.HttpUrl;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -203,39 +206,46 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 ((BaseActivity) requireActivity()).changeWallpaper(true);
             }
         });
-        findViewById(R.id.llHomeApi).setOnClickListener( v -> {
-            ArrayList<String> history = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
-            HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
+        findViewById(R.id.llHomeApi).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FastClickCheckUtil.check(v);
+                List<SourceBean> sites = ApiConfig.get().getSourceBeanList();
+                if (sites.size() > 0) {
+                    SelectDialog<SourceBean> dialog = new SelectDialog<>(mActivity);
+                    dialog.setTip("请选择首页数据源");
+                    dialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<SourceBean>() {
+                        @Override
+                        public void click(SourceBean value, int pos) {
+                            ApiConfig.get().setSourceBean(value);
+                            tvHomeApi.setText(ApiConfig.get().getHomeSourceBean().getName());
 
-            if (history.isEmpty())
-                return;
-            String current = Hawk.get(HawkConfig.API_NAME, "");
-            int idx = 0;
-            if (history.contains(current))
-                idx = history.indexOf(current);
-            ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
-            dialog.setTip("历史配置列表");
-            dialog.setAdapter(new ApiHistoryDialogAdapter.SelectDialogInterface() {
-                @Override
-                public void click(String value) {
-                    Hawk.put(HawkConfig.API_NAME, value);
-                    if (map.containsKey(value))
-                        Hawk.put(HawkConfig.API_URL, map.get(value));
-                    else
-                        Hawk.put(HawkConfig.API_URL, value);
+                            Intent intent =new Intent(mContext, HomeActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            Bundle bundle = new Bundle();
+                            bundle.putBoolean("useCache", true);
+                            intent.putExtras(bundle);
+                            startActivity(intent);
+                        }
 
-                    tvHomeApi.setText(value);
+                        @Override
+                        public String getDisplay(SourceBean val) {
+                            return val.getName();
+                        }
+                    }, new DiffUtil.ItemCallback<SourceBean>() {
+                        @Override
+                        public boolean areItemsTheSame(@NonNull @NotNull SourceBean oldItem, @NonNull @NotNull SourceBean newItem) {
+                            return oldItem == newItem;
+                        }
 
-                    dialog.dismiss();
+                        @Override
+                        public boolean areContentsTheSame(@NonNull @NotNull SourceBean oldItem, @NonNull @NotNull SourceBean newItem) {
+                            return oldItem.getKey().equals(newItem.getKey());
+                        }
+                    }, sites, sites.indexOf(ApiConfig.get().getHomeSourceBean()));
+                    dialog.show();
                 }
-
-
-                @Override
-                public void del(String value, ArrayList<String> data) {
-                    Hawk.put(HawkConfig.API_NAME_HISTORY, data);
-                }
-            }, history, idx);
-            dialog.show();
+            }
         });
         findViewById(R.id.llDns).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -307,22 +317,13 @@ public class ModelSettingFragment extends BaseLazyFragment {
         });
 
         findViewById(R.id.llApiHistory).setOnClickListener( v -> {
-            // ArrayList<String> apiHistory = Hawk.get(HawkConfig.API_HISTORY, new ArrayList<>());
-            // ArrayList<String> nameHistory = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
-            ArrayList<String> history = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
+            ArrayList<String> history = new ArrayList<>();
             HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
+            HashMap<String, String> map_history = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
 
-            // apiHistory.addAll(nameHistory);
-            //
-            //
-            // Set<String> set = new HashSet<>();
-            // List<String> history = new ArrayList<>();
-            //
-            // for (String cd : apiHistory) {
-            //     if (set.add(cd)) {
-            //         history.add(cd);
-            //     }
-            // }
+            for(HashMap.Entry<String, String> entry : map.entrySet()) {
+                history.add(entry.getKey());
+            }
 
             if (history.isEmpty())
                 return;
@@ -336,20 +337,30 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 @Override
                 public void click(String value) {
                     Hawk.put(HawkConfig.API_NAME, value);
-                    if (map.containsKey(value))
+                    if (map.containsKey(value)) {
                         Hawk.put(HawkConfig.API_URL, map.get(value));
-                    else
+                        if (!map_history.containsKey(value)) {
+                            map_history.put(value+'★', map.get(value));
+                            Hawk.put(HawkConfig.API_MAP_HISTORY, map_history);
+                        }
+                    }
+                    else {
                         Hawk.put(HawkConfig.API_URL, value);
-
+                        map_history.put(value, value);
+                        Hawk.put(HawkConfig.API_MAP_HISTORY, map_history);
+                    }
                     tvHomeApi.setText(value);
-
                     dialog.dismiss();
                 }
 
-
                 @Override
                 public void del(String value, ArrayList<String> data) {
-                    Hawk.put(HawkConfig.API_NAME_HISTORY, data);
+                    if (map_history.containsKey(value)) {
+                        map_history.remove(value);
+                        Hawk.put(HawkConfig.API_MAP_HISTORY, map_history);
+                    }
+                    map.remove(value);
+                    Hawk.put(HawkConfig.API_MAP, map);
                 }
             }, history, idx);
             dialog.show();

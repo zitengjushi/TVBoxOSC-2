@@ -148,7 +148,7 @@ public class StoreApiConfig {
         // HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
 
         ArrayList<String> history = new ArrayList<>();
-        HashMap<String, String> map = new HashMap<>();
+        HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
 
         history.add(Hawk.get(HawkConfig.API_NAME));
         map.put(Hawk.get(HawkConfig.API_NAME), Hawk.get(HawkConfig.API_URL));
@@ -170,9 +170,6 @@ public class StoreApiConfig {
                 map.put(name, url);
             }
         }
-//        Hawk.put(HawkConfig.API_NAME, history.get(0));
-//        Hawk.put(HawkConfig.API_URL, map.get(history.get(0)));
-        Hawk.put(HawkConfig.API_NAME_HISTORY, history);
         Hawk.put(HawkConfig.API_MAP, map);
         return "订阅结束，点击线路可切换";
     }

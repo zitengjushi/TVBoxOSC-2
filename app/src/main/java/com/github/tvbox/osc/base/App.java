@@ -64,18 +64,14 @@ public class App extends MultiDexApplication {
         String defaultApiName = "";
         String defaultApi = "";
 
-        HashMap<String, String> defaultApiMap = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
+        HashMap<String, String> defaultApiMap = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
         defaultApiMap.put(defaultApiName, defaultApi);
-
-        ArrayList<String> defaultApiHistory = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
-        defaultApiHistory.add(defaultApiName);
 
         Hawk.put(HawkConfig.DEBUG_OPEN, false);
 
         putDefault(HawkConfig.API_URL, defaultApi);
         putDefault(HawkConfig.API_NAME, defaultApiName);
-        putDefault(HawkConfig.API_NAME_HISTORY, defaultApiHistory);
-        putDefault(HawkConfig.API_MAP, defaultApiMap);
+        putDefault(HawkConfig.API_MAP_HISTORY, defaultApiMap);
 
         Hawk.put(HawkConfig.DEBUG_OPEN, false);
         if (!Hawk.contains(HawkConfig.PLAY_TYPE)) {

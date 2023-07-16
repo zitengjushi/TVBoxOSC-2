@@ -39,11 +39,11 @@ public class HawkConfig {
     public static final String REMOTE_TVBOX = "remote_tvbox_host";
     public static final String IJK_CACHE_PLAY = "ijk_cache_play";
 
-    public static final String API_MAP = "api_map";
-    public static final String API_NAME_HISTORY = "api_name_history";
-    public static final String API_NAME = "api_name";
+    public static final String API_MAP = "api_map"; //当前仓库配置源列表
+    public static final String API_MAP_HISTORY = "api_map_history"; //历史配置源列表
+    public static final String API_NAME = "api_name"; //当前在用配置源名称
     public static final String STORE_API = "store_api";
     public static final String STORE_API_NAME = "store_api_name";
     public static final String STORE_API_NAME_HISTORY = "store_api_name_history";
-    public static final String STORE_API_MAP = "store_api_map";
+    public static final String STORE_API_MAP = "store_api_map"; //仓库配置列表
 }

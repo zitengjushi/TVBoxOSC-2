@@ -64,33 +64,16 @@ public class ApiDialog extends BaseDialog {
             public void onClick(View v) {
                 String newApi = inputApi.getText().toString().trim();
                 if (!newApi.isEmpty()) {
-                    // ArrayList<String> history = Hawk.get(HawkConfig.API_HISTORY, new ArrayList<String>());
-                    // if (!history.contains(newApi))
-                    //     history.add(0, newApi);
-                    // if (history.size() > 30)
-                    //     history.remove(30);
-                    //
-                    // listener.onchange(newApi);
-                    //
-                    // Hawk.put(HawkConfig.API_HISTORY, history);
 
-
-
-                    ArrayList<String> nameHistory = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
-                    HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
+                    HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
                     if(!map.containsValue(newApi)){
                         Hawk.put(HawkConfig.API_URL, newApi);
                         Hawk.put(HawkConfig.API_NAME, newApi);
-                        nameHistory.add(0,newApi);
                         map.put(newApi, newApi);
 
                         listener.onchange(newApi);
                     }
-                    if(map.size()>30){
-                        map.remove(nameHistory.get(30));
-                        nameHistory.remove(30);
-                    }
-                    Hawk.put(HawkConfig.API_NAME_HISTORY, nameHistory);
+                    Hawk.put(HawkConfig.API_MAP_HISTORY, map);
                     Hawk.put(HawkConfig.API_MAP, map);
                     dismiss();
                 }
