@@ -60,9 +60,9 @@ public class StoreApiConfig {
         String storeName = Hawk.get(HawkConfig.STORE_API_NAME, "爬的别人的仓库");
 
         if (storeMap.isEmpty()) {
-            Toast.makeText(context, "仓库为空，使用默认仓库", Toast.LENGTH_SHORT).show();
-            String name = "爬的别人的仓库";
-            String sotreApi = "https://cdn.jsdelivr.net/gh/mlabalabala/TVResource@main/boxCfg/ori_source.json";
+            Toast.makeText(context, "仓库为空", Toast.LENGTH_SHORT).show();
+            String name = "";
+            String sotreApi = "";
             storeMap.put(name, sotreApi);
             storeNameHistory.add(name);
             Hawk.put(HawkConfig.STORE_API_NAME_HISTORY, storeNameHistory);
@@ -144,15 +144,8 @@ public class StoreApiConfig {
 
     private String MutiUrl(String urlsJson) {
 
-        // ArrayList<String> history = Hawk.get(HawkConfig.API_NAME_HISTORY, new ArrayList<>());
-        // HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP, new HashMap<>());
 
-        ArrayList<String> history = new ArrayList<>();
         HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
-
-        history.add(Hawk.get(HawkConfig.API_NAME));
-        map.put(Hawk.get(HawkConfig.API_NAME), Hawk.get(HawkConfig.API_URL));
-
         JsonObject urlsObject = new Gson().fromJson(urlsJson, JsonObject.class);
 
         if(null == urlsObject.get("urls"))
@@ -166,9 +159,9 @@ public class StoreApiConfig {
             String name = obj.get("name").getAsString();
             String url = obj.get("url").getAsString();
             if(!map.containsValue(url)){
-                history.add(name);
                 map.put(name, url);
             }
+            if(map.size()>30) break;
         }
         Hawk.put(HawkConfig.API_MAP, map);
         return "订阅结束，点击线路可切换";

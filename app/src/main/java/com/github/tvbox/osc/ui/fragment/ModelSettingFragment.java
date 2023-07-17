@@ -329,8 +329,12 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 return;
             String current = Hawk.get(HawkConfig.API_NAME, "");
             int idx = 0;
-            if (history.contains(current))
+            if (history.contains(current)) {
                 idx = history.indexOf(current);
+            }else{
+                Hawk.put(HawkConfig.API_NAME,history.get(0));
+                Hawk.put(HawkConfig.API_URL,map.get(history.get(0)));
+            }
             ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
             dialog.setTip("历史配置列表");
             dialog.setAdapter(new ApiHistoryDialogAdapter.SelectDialogInterface() {
@@ -374,19 +378,24 @@ public class ModelSettingFragment extends BaseLazyFragment {
             String storeApiName = Hawk.get(HawkConfig.STORE_API_NAME, "");
 
             int idx = 0;
+            history.add(0,"配置源使用记录");
             if (history.contains(storeApiName))
                 idx = history.indexOf(storeApiName);
-
             ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
             dialog.setTip("多源历史配置列表");
             dialog.setAdapter(new ApiHistoryDialogAdapter.SelectDialogInterface() {
                 @Override
                 public void click(String value) {
                     Hawk.put(HawkConfig.STORE_API_NAME, value);
-                    try {
-                        StoreApiConfig.get().Subscribe(getContext());
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    if(value=="配置源使用记录"){
+                        HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
+                        Hawk.put(HawkConfig.API_MAP, map);
+                    }else{
+                        try {
+                            StoreApiConfig.get().Subscribe(getContext());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                     dialog.dismiss();
                 }

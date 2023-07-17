@@ -74,7 +74,6 @@ public class ApiDialog extends BaseDialog {
                         listener.onchange(newApi);
                     }
                     Hawk.put(HawkConfig.API_MAP_HISTORY, map);
-                    Hawk.put(HawkConfig.API_MAP, map);
                     dismiss();
                 }
             }
