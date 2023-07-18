@@ -1,8 +1,11 @@
 package com.github.tvbox.osc.ui.fragment;
 
+import android.content.ClipData;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.content.ClipboardManager;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,7 +38,6 @@ import com.github.tvbox.osc.util.FastClickCheckUtil;
 import com.github.tvbox.osc.util.FileUtils;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.HistoryHelper;
-import com.github.tvbox.osc.util.LOG;
 import com.github.tvbox.osc.util.OkGoHelper;
 import com.github.tvbox.osc.util.PlayerHelper;
 import com.lzy.okgo.OkGo;
@@ -51,9 +53,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 import okhttp3.HttpUrl;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -356,6 +356,13 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     tvHomeApi.setText(value);
                     dialog.dismiss();
                 }
+                @Override
+                public void copy(Context context,String value) {
+                    ClipboardManager cmb = (ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipData mClipData =ClipData.newPlainText("Label", map.get(value));
+                    cmb.setPrimaryClip(mClipData);
+                    Toast.makeText(getContext(), "地址已复制到剪切板", Toast.LENGTH_LONG).show();
+                }
 
                 @Override
                 public void del(String value, ArrayList<String> data) {
@@ -378,6 +385,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
             String storeApiName = Hawk.get(HawkConfig.STORE_API_NAME, "");
 
             int idx = 0;
+            if (!history.contains("配置源使用记录"))
             history.add(0,"配置源使用记录");
             if (history.contains(storeApiName))
                 idx = history.indexOf(storeApiName);
@@ -400,6 +408,14 @@ public class ModelSettingFragment extends BaseLazyFragment {
                     dialog.dismiss();
                 }
 
+                @Override
+                public void copy(Context context,String value) {
+                    HashMap<String, String> map = Hawk.get(HawkConfig.STORE_API_MAP, new HashMap<>());
+                    ClipboardManager cmb = (ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipData mClipData =ClipData.newPlainText("Label", map.get(value));
+                    cmb.setPrimaryClip(mClipData);
+                    Toast.makeText(getContext(), "地址已复制到剪切板", Toast.LENGTH_LONG).show();
+                }
                 @Override
                 public void del(String value, ArrayList<String> data) {
                     HashMap<String, String> map = Hawk.get(HawkConfig.STORE_API_MAP, new HashMap<>());

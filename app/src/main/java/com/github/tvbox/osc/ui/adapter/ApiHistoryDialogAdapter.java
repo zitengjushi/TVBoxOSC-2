@@ -1,5 +1,6 @@
 package com.github.tvbox.osc.ui.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +29,7 @@ public class ApiHistoryDialogAdapter extends ListAdapter<String, ApiHistoryDialo
 
     public interface SelectDialogInterface {
         void click(String value);
-
+        void copy(Context context,String value);
         void del(String value, ArrayList<String> data);
     }
 
@@ -88,6 +89,12 @@ public class ApiHistoryDialogAdapter extends ListAdapter<String, ApiHistoryDialo
                 select = value;
                 notifyItemChanged(data.indexOf(value));
                 dialogInterface.click(value);
+            }
+        });
+        holder.itemView.findViewById(R.id.tvCopy).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialogInterface.copy(v.getContext(),value);
             }
         });
         holder.itemView.findViewById(R.id.tvDel).setOnClickListener(new View.OnClickListener() {
