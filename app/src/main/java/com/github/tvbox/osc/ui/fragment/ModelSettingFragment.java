@@ -395,8 +395,9 @@ public class ModelSettingFragment extends BaseLazyFragment {
             String storeApiName = Hawk.get(HawkConfig.STORE_API_NAME, "");
 
             int idx = 0;
-            if (!history.contains("配置源使用记录"))
-            history.add(0,"配置源使用记录");
+            if (!history.contains("配置源使用记录")) {
+                history.add(0, "配置源使用记录");
+            }
             if (history.contains(storeApiName))
                 idx = history.indexOf(storeApiName);
             ApiHistoryDialog dialog = new ApiHistoryDialog(getContext());
@@ -405,7 +406,7 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 @Override
                 public void click(String value) {
                     Hawk.put(HawkConfig.STORE_API_NAME, value);
-                    if(value=="配置源使用记录"){
+                    if(value.contains("配置源使用记录")){
                         HashMap<String, String> map = Hawk.get(HawkConfig.API_MAP_HISTORY, new HashMap<>());
                         Hawk.put(HawkConfig.API_MAP, map);
                     }else{
