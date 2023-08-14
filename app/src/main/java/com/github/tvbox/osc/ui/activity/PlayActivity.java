@@ -1017,7 +1017,6 @@ public class PlayActivity extends BaseActivity {
             String jp_url= vs.url;
             mController.showParse(false);
             if(vs.url.startsWith("tvbox-xg:")){
-                jp_url = jp_url.replace("tvbox-xg://","tvbox-xg:");
                 playUrl(Jianpian.JPUrlDec(jp_url.substring(9)), null);
             }else {
                 playUrl(Jianpian.JPUrlDec(jp_url), null);
@@ -1035,7 +1034,7 @@ public class PlayActivity extends BaseActivity {
             }
 
             @Override
-            public void list(String playList) {
+            public void list(Map<Integer, String> urlMap) {
             }
 
             @Override
