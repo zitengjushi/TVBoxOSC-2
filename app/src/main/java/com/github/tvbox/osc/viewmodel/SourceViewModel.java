@@ -50,6 +50,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -190,9 +192,13 @@ public class SourceViewModel extends ViewModel {
                         }
                     });
         }else if (type == 4) {
+            String extend=sourceBean.getExt();
+            String apiUrl = Hawk.get(HawkConfig.API_URL, "");
+            extend=getFixUrl(apiUrl,extend);
             OkGo.<String>get(sourceBean.getApi())
                 .tag(sourceBean.getKey() + "_sort")
                 .params("filter", "true")
+                .params("extend", extend)
                 .execute(new AbsCallback<String>() {
                     @Override
                     public String convertResponse(okhttp3.Response response) throws Throwable {
@@ -293,15 +299,17 @@ public class SourceViewModel extends ViewModel {
                         }
                     });
         }else if (type == 4) {
-            String ext="";
+            String ext= "";
             if (sortData.filterSelect != null && sortData.filterSelect.size() > 0) {
                 try {
-                    LOG.i(new JSONObject(sortData.filterSelect).toString());
-                    ext = Base64.encodeToString(new JSONObject(sortData.filterSelect).toString().getBytes("UTF-8"), Base64.DEFAULT |  Base64.NO_WRAP);
+                    String selectExt = new JSONObject(sortData.filterSelect).toString();
+                    ext = Base64.encodeToString(selectExt.getBytes("UTF-8"), Base64.DEFAULT |  Base64.NO_WRAP);
                     LOG.i(ext);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
+            }else {
+                ext = Base64.encodeToString("{}".getBytes(), Base64.DEFAULT |  Base64.NO_WRAP);
             }
             OkGo.<String>get(homeSourceBean.getApi())
                 .tag(homeSourceBean.getApi())
@@ -691,9 +699,13 @@ public class SourceViewModel extends ViewModel {
                 playResult.postValue(null);
             }
         } else if (type == 4) {
+            String extend=sourceBean.getExt();
+            String apiUrl = Hawk.get(HawkConfig.API_URL, "");
+            extend=getFixUrl(apiUrl,extend);
             OkGo.<String>get(sourceBean.getApi())
                 .params("play", url)
                 .params("flag" ,playFlag)
+                .params("extend", extend)
                 .tag("play")
                 .execute(new AbsCallback<String>() {
                     @Override
@@ -732,6 +744,16 @@ public class SourceViewModel extends ViewModel {
         }else {
             playResult.postValue(null);
         }
+    }
+
+    private String getFixUrl(String url,String content){
+        if (content.contains("\"./")) {
+            if(!url.startsWith("http") && !url.startsWith("clan://")){
+                url = "http://" + url;
+            }
+            content = content.replace("./", url.substring(0,url.lastIndexOf("/") + 1));
+        }
+        return content;
     }
 
     private MovieSort.SortFilter getSortFilter(JsonObject obj) {
@@ -846,85 +868,54 @@ public class SourceViewModel extends ViewModel {
         }
     }
 
-    private void checkThunder(AbsXml data) {
+    public void checkThunder(AbsXml data, int index) {
         boolean thunderParse = false;
         if (data.movie != null && data.movie.videoList != null && data.movie.videoList.size() == 1) {
             Movie.Video video = data.movie.videoList.get(0);
-            if (video != null && video.urlBean != null && video.urlBean.infoList != null && video.urlBean.infoList.size() == 1) {
-                Movie.Video.UrlBean.UrlInfo urlInfo = video.urlBean.infoList.get(0);
-                if (urlInfo != null && urlInfo.beanList.size() == 1 && Thunder.isSupportUrl(urlInfo.beanList.get(0).url)) {
-                    thunderParse = true;
-                    Thunder.parse(App.getInstance(), urlInfo.beanList.get(0).url, new Thunder.ThunderCallback() {
-                        @Override
-                        public void status(int code, String info) {
-                            if (code >= 0) {
-                                LOG.i(info);
-                            } else {
-                                urlInfo.beanList.get(0).name = info;
-                                detailResult.postValue(data);
-                            }
-                        }
-
-                        @Override
-                        public void list(String playList) {
-                            urlInfo.urls = playList;
-                            String[] str = playList.split("#");
-                            List<Movie.Video.UrlBean.UrlInfo.InfoBean> infoBeanList = new ArrayList<>();
-                            for (String s : str) {
-                                if (s.contains("$")) {
-                                    String[] ss = s.split("\\$");
-//                                    if (ss.length >= 2) {
-//                                        infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean(ss[0], ss[1]));
-//                                    }
-                                    if (ss.length > 0) {
-                                        if (ss.length >= 2) {
-                                            infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean(ss[0], ss[1]));
-                                        } else {
-                                            infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean((infoBeanList.size() + 1) + "", ss[0]));
-                                        }
-                                    }
-                                }
-                            }
-                            urlInfo.beanList = infoBeanList;
-                            detailResult.postValue(data);
-                        }
-
-                        @Override
-                        public void play(String url) {
-
-                        }
-                    });
+            if (video != null && video.urlBean != null && video.urlBean.infoList != null) {
+                boolean hasThunder=false;
+                for (int idx=0;idx<video.urlBean.infoList.size();idx++) {
+                    Movie.Video.UrlBean.UrlInfo urlInfo = video.urlBean.infoList.get(idx);
+                    if(Thunder.isSupportUrl(urlInfo.beanList.get(0).url)){
+                        hasThunder=true;
+                        break;
+                    }
                 }
-                if (urlInfo != null && urlInfo.beanList.size() == 1 && Thunder.isNetworkDownloadTask(urlInfo.beanList.get(0).url)) {
-                    Thunder.startTask(App.getInstance(), urlInfo.beanList.get(0).url, new Thunder.ThunderCallback() {
+                if (hasThunder) {
+                    thunderParse = true;
+                    Thunder.parse(App.getInstance(), video.urlBean, new Thunder.ThunderCallback() {
                         @Override
                         public void status(int code, String info) {
                             if (code >= 0) {
                                 LOG.i(info);
                             } else {
-                                urlInfo.beanList.get(0).name = info;
+                                video.urlBean.infoList.get(0).beanList.get(0).name = info;
                                 detailResult.postValue(data);
                             }
                         }
 
                         @Override
-                        public void list(String playList) {
-                            urlInfo.urls = playList;
-                            String[] str = playList.split("#");
-                            List<Movie.Video.UrlBean.UrlInfo.InfoBean> infoBeanList = new ArrayList<>();
-                            for (String s : str) {
-                                if (s.contains("$")) {
-                                    String[] ss = s.split("\\$");
-                                    if (ss.length > 0) {
-                                        if (ss.length >= 2) {
-                                            infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean(ss[0], ss[1]));
-                                        } else {
-                                            infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean((infoBeanList.size() + 1) + "", ss[0]));
+                        public void list(Map<Integer, String> urlMap) {
+                            for (int key : urlMap.keySet()) {
+                                String playList=urlMap.get(key);
+                                video.urlBean.infoList.get(key).urls = playList;
+                                String[] str = playList.split("#");
+                                List<Movie.Video.UrlBean.UrlInfo.InfoBean> infoBeanList = new ArrayList<>();
+                                for (String s : str) {
+                                    if (s.contains("$")) {
+                                        String[] ss = s.split("\\$");
+
+                                        if (ss.length > 0) {
+                                            if (ss.length >= 2) {
+                                                infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean(ss[0], ss[1]));
+                                            } else {
+                                                infoBeanList.add(new Movie.Video.UrlBean.UrlInfo.InfoBean((infoBeanList.size() + 1) + "", ss[0]));
+                                            }
                                         }
                                     }
                                 }
+                                video.urlBean.infoList.get(key).beanList = infoBeanList;
                             }
-                            urlInfo.beanList = infoBeanList;
                             detailResult.postValue(data);
                         }
 
@@ -936,7 +927,7 @@ public class SourceViewModel extends ViewModel {
                 }
             }
         }
-        if (!thunderParse) {
+        if (!thunderParse && index==0) {
             detailResult.postValue(data);
         }
     }
@@ -961,8 +952,8 @@ public class SourceViewModel extends ViewModel {
                 EventBus.getDefault().post(new RefreshEvent(RefreshEvent.TYPE_QUICK_SEARCH_RESULT, data));
             } else if (result != null) {
                 if (result == detailResult) {
-                    checkThunder(data);
-                } else {
+                    checkThunder(data,0);
+                }else {
                     result.postValue(data);
                 }
             }
@@ -986,7 +977,7 @@ public class SourceViewModel extends ViewModel {
                     "\t\"list\": [{\n" +
                     "\t\t\"vod_id\": \"137133\",\n" +
                     "\t\t\"vod_name\": \"磁力测试\",\n" +
-                    "\t\t\"vod_pic\": \"https:/img9.doubanio.com/view/photo/s_ratio_poster/public/p2656327176.webp\",\n" +
+                    "\t\t\"vod_pic\": \"https:/img9.doubanio.com/view/photo/s_ratio_poster/public/p2656327176.webp@User-Agent=com.douban.frodo\",\n" +
                     "\t\t\"type_name\": \"剧情 / 爱情 / 古装\",\n" +
                     "\t\t\"vod_year\": \"2022\",\n" +
                     "\t\t\"vod_area\": \"中国大陆\",\n" +
@@ -1008,8 +999,8 @@ public class SourceViewModel extends ViewModel {
                 EventBus.getDefault().post(new RefreshEvent(RefreshEvent.TYPE_QUICK_SEARCH_RESULT, data));
             } else if (result != null) {
                 if (result == detailResult) {
-                    checkThunder(data);
-                } else {
+                    checkThunder(data,0);
+                }else {
                     result.postValue(data);
                 }
             }
